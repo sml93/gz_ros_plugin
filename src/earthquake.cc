@@ -66,7 +66,38 @@ namespace gazebo
       this->rosQueueThread2 = 
         std::thread(std::bind(&ModelQuake::QueueThread2, this));
       
-      ROS_WARN("Loaded ModelQuake Plugin with parent...%s, only X Axis")
+      ROS_WARN("Loaded ModelQuake Plugin with parent...%s, only X Axis Freq Supported in this V-1.0", this->model->GetName().c_str());
+
+    }
+
+    public: void OnUpdate()
+    {
+      double new_secs = ros::Time::now().toSec();
+      double delta = new_secs - this->old_secs;
+
+      double max_delta = 0.0;
+
+      if (this->x_axis_freq != 0.0)
+      {
+        max_delta = 1.0 / this->x_axis_freq;
+      }
+
+      double magnitude_speed = this->x_axis_magn;
+
+      if (delta > max_delta && delta != 0.0)
+      {
+        // Change Direction
+        this->direction = this->direction * -1;
+        this->old_secs = new_secs;
+        ROS_DEBUG("Changing direction...");
+      }
+
+      double speed = magnitude_speed * this->direction;
+
+      // Apply a small linear velocity to the model.
+      this->model->SetLinearVel(ignition::math::Vector3d(speed, 0, 0));
+      this->model->SetAngularVel(ignition::math::Vector3d(0, 0, 0));
+    }
 
     }
   };
