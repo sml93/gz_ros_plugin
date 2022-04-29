@@ -21,7 +21,7 @@ namespace gazebo
       this->model = _parent;
 
       // Listen to the update event. This event is broadcast every simulation iteration.
-      this->updateConnection = event::Events::ConnectorWorldUpdateBegin(
+      this->updateConnection = event::Events::ConnectWorldUpdateBegin(
         std::bind(&ModelQuake::OnUpdate, this));
 
       this->old_secs = ros::Time::now().toSec();
@@ -147,13 +147,13 @@ namespace gazebo
     double old_secs;
     int direction = 1;
     double x_axis_freq = 1.0;
-    double x_axist_mag = 1.0;
+    double x_axis_mag = 1.0;
 
     private: std::unique_ptr<ros::NodeHandle> rosNode;
 
     private: ros::Subscriber rosSub;
     private: ros::CallbackQueue rosQueue;
-    private: std::thread rosQueueThread2;
+    private: std::thread rosQueueThread;
 
     private: ros::Subscriber rosSub2;
     private: ros::CallbackQueue rosQueue2;
