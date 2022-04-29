@@ -82,7 +82,7 @@ namespace gazebo
         max_delta = 1.0 / this->x_axis_freq;
       }
 
-      double magnitude_speed = this->x_axis_magn;
+      double magnitude_speed = this->x_axis_mag;
 
       if (delta > max_delta && delta != 0.0)
       {
@@ -99,6 +99,67 @@ namespace gazebo
       this->model->SetAngularVel(ignition::math::Vector3d(0, 0, 0));
     }
 
+    public: void SetFrequency(const double &_freq)
+    {
+      this->x_axis_freq = _freq;
+      ROS_WARN("x_axis_freq >> %f", this-> x_axis_freq);
     }
+
+    public: void SetMagnitude(const double &_mag)
+    {
+      this->x_axis_mag = _mag;
+      ROS_WARN("x_axis_mag >> %f", this-> x_axis_mag);
+    }
+
+    public: void OnRosMsg(const std_msgs::Float32ConstPtr &_msg)
+    {
+      this->SetFrequency(_msg->data);
+    }
+
+    public: void QueueThread()
+    {
+      static const double timeout = 0.01;
+      while (this->rosNode->ok())
+      {
+        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+      }
+    }
+
+    public: void OnRosMsg_Mag(const std_msgs::Float32ConstPtr &_msg)
+    {
+      this->SetMagnitude(_msg->data);
+
+    }
+
+    ///\brief ROS Helper function that processes messages
+    private: void QueueThread2()
+    {
+      static const double timeout = 0.01;
+      while (this->rosNode->ok())
+      {
+        this->rosQueue2.callAvailable(ros::WallDuration(timeout));
+      }
+    }
+
+    private: physics::ModelPtr model;
+    private: event::ConnectionPtr updateConnection;
+
+    double old_secs;
+    int direction = 1;
+    double x_axis_freq = 1.0;
+    double x_axist_mag = 1.0;
+
+    private: std::unique_ptr<ros::NodeHandle> rosNode;
+
+    private: ros::Subscriber rosSub;
+    private: ros::CallbackQueue rosQueue;
+    private: std::thread rosQueueThread2;
+
+    private: ros::Subscriber rosSub2;
+    private: ros::CallbackQueue rosQueue2;
+    private: std::thread rosQueueThread2;
+        
   };
+
+  GZ_REGISTER_MODEL_PLUGIN(ModelQuake)
 }
