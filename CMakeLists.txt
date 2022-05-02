@@ -87,6 +87,10 @@ target_link_libraries(model_push_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 add_library(earthquake_plugin src/earthquake.cc)
 target_link_libraries(earthquake_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
+# For jetForce_plugin plugin
+add_library(jetForce_plugin src/jetForce.cc)
+target_link_libraries(jetForce_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
