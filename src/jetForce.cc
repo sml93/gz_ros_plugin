@@ -1,18 +1,23 @@
-#include <functional>
-#include <gazebo/gazebo.hh>
-#include <gazebo/physics/physics.hh>
-#include <gazebo/common/common.hh>
-#include <ignition/math/Vector3.hh>
+#include <math.h>
 #include <thread>
+#include <functional>
+
 #include "ros/ros.h"
+#include "std_msgs/Int16.h"
+#include "std_msgs/Float32.h"
 #include "ros/callback_queue.h"
 #include "ros/subscribe_options.h"
-#include "std_msgs/Float32.h"
-#include "std_msgs/Int16.h"
-#include <gazebo/transport/transport.hh>
-#include <gazebo/msgs/msgs.hh>
-#include <math.h>
 #include "geometry_msgs/PoseStamped.h"
+
+#include <gazebo/transport/transport.hh>
+#include <gazebo/physics/physics.hh>
+#include <ignition/math/Vector3.hh>
+#include <gazebo/common/common.hh>
+#include <gazebo/msgs/msgs.hh>
+#include <gazebo/gazebo.hh>
+
+#define deg2rad (M_PI / 180.0)
+
 
 namespace gazebo
 {
@@ -85,26 +90,28 @@ namespace gazebo
     }
     public: void OnUpdate()
     {
+      double reset = 0.0;
       double jetMag = this->x_axis_mag;
       double jetAng = this->x_axis_angle;
-      double jetforce_x = jetMag * sin(jetAng);
-      double jetforce_z = jetMag * cos(jetAng);
+      double jetforce_x = jetMag * sin(deg2rad*jetAng);
+      double jetforce_z = jetMag * cos(deg2rad*jetAng);
 
       // ROS_WARN("jetAng >> %f", jetAng);
       // ROS_WARN("jetMag >> %f", jetMag);
-
-      ROS_WARN("x_current >> %f", this->x_current);
-      ROS_WARN("x_current >> %f", this->z_current);
 
       if (jetMag != 0)
       {
         // ROS_WARN("jetforce_x >> %f", jetforce_x);
         // ROS_WARN("jetforce_z >> %f", jetforce_z);
-        // Apply a small linear/angular velocity to the model.
-        this->model->SetLinearVel(ignition::math::Vector3d(jetforce_x, 0, jetforce_z));
-        // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
+        
+        for (int i=0; i<50; i++)
+        {
+          // Apply a small linear/angular velocity to the model.
+          this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
+            // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
+        }
+        this->x_axis_mag = 0.0;
       }
-      // TODO: Write subscriber to the pose topic to get the current x and z and add into the SetLinearVel
     }
 
     
