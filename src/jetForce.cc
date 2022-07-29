@@ -3,6 +3,7 @@
 #include <functional>
 
 #include "ros/ros.h"
+#include "ros/console.h"
 #include "std_msgs/Int16.h"
 #include "std_msgs/Float32.h"
 #include "ros/callback_queue.h"
@@ -38,6 +39,7 @@ namespace gazebo
       std::string jetForce_angle_topicName = "/jetForce_angle";
       std::string jetForce_mag_topicName = "/jetForce_mag";
       std::string pose_topicName = "/mavros/local_position/pose";
+      std::string time_duration_topicName = "/duration";
 
       if (!ros::isInitialized())
       {
@@ -85,6 +87,18 @@ namespace gazebo
       // Spin up the queue helper thread.
       this->rosQueueThread3 = 
         std::thread(std::bind(&jetForce::QueueThread3, this));
+
+      // Duration
+      ros::SubscribeOptions so4 = 
+        ros::SubscribeOptions::create<std_msgs::Int16>(
+          time_duration_topicName, 1,
+          boost::bind(&jetForce::OnRosMsg_Dur, this, _1),
+          ros::VoidPtr(), &this->rosQueue);
+      this->rosSub4 = this->rosNode->subscribe(so4);
+
+      // Spin up the queue helper thread.
+      this->rosQueueThread4 = 
+        std::thread(std::bind(&jetForce::QueueThread4, this));
      
 
     }
@@ -95,6 +109,7 @@ namespace gazebo
       double jetAng = this->x_axis_angle;
       double jetforce_x = jetMag * sin(deg2rad*jetAng);
       double jetforce_z = jetMag * cos(deg2rad*jetAng);
+      int dur = this->jet_dur;
 
       // ROS_WARN("jetAng >> %f", jetAng);
       // ROS_WARN("jetMag >> %f", jetMag);
@@ -104,10 +119,11 @@ namespace gazebo
         // ROS_WARN("jetforce_x >> %f", jetforce_x);
         // ROS_WARN("jetforce_z >> %f", jetforce_z);
         
-        for (int i=0; i<50; i++)
+        for (int i=0; i<dur; i++)
         {
           // Apply a small linear/angular velocity to the model.
           this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
+          ROS_INFO("mag >> %f", this-> x_axis_mag);
             // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
         }
         this->x_axis_mag = 0.0;
@@ -118,14 +134,19 @@ namespace gazebo
     public: void SetAngle(const double &_angle)
     {
       this->x_axis_angle = _angle;
-      ROS_WARN("x_axis_angle >> %f", this->x_axis_angle);
+      ROS_INFO("x_axis_angle >> %f", this->x_axis_angle);
     }
 
     
     public: void SetMag(const double &_mag)
     {
       this->x_axis_mag = _mag;
-      ROS_WARN("x_axis_mag >> %f", this->x_axis_mag);
+      ROS_INFO("x_axis_mag >> %f", this->x_axis_mag);
+    }
+
+    public: void SetDuration(const int &_dur)
+    {
+      this->jet_dur = _dur;
     }
 
     
@@ -140,14 +161,19 @@ namespace gazebo
       this->SetMag(_msg->data);
     }
 
+    public: void OnRosMsg_Dur(const std_msgs::Int16ConstPtr &_msg)
+    {
+      this->SetDuration(_msg->data);
+    }
+
     public: void OnRosMsg_Pose(const geometry_msgs::PoseStamped::ConstPtr &_msg)
     {
       // ROS_INFO_STREAM("Received Pose: " << _msg);
       this->x_current = _msg->pose.position.x;
       this->y_current = _msg->pose.position.y;
       this->z_current = _msg->pose.position.z;
-      ROS_WARN("x_current >> %f", x_current);
-      ROS_WARN("z_current >> %f", z_current);
+      ROS_INFO("x_current >> %f", x_current);
+      ROS_INFO("z_current >> %f", z_current);
     }
 
 
@@ -182,6 +208,17 @@ namespace gazebo
       }
     }
 
+  
+    ///\brief ROS Helper function4 that processes messages
+    private: void QueueThread4()
+    {
+      static const double timeout = 0.01;
+      while (this->rosNode->ok())
+      {
+        this->rosQueue4.callAvailable(ros::WallDuration(timeout));
+      }
+    }
+
     
 
     // Pointer to the model
@@ -192,6 +229,7 @@ namespace gazebo
 
     double x_axis_angle = 0.0;
     double x_axis_mag = 0.0;
+    int jet_dur = 0;
 
     double x_current;
     double y_current;
@@ -210,6 +248,10 @@ namespace gazebo
     private: ros::Subscriber rosSub3;
     private: ros::CallbackQueue rosQueue3;
     private: std::thread rosQueueThread3;
+
+    private: ros::Subscriber rosSub4;
+    private: ros::CallbackQueue rosQueue4;
+    private: std::thread rosQueueThread4;
 
   };
 
