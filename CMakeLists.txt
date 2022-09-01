@@ -18,6 +18,10 @@ find_package(catkin REQUIRED COMPONENTS
 # Depend on system install of Gazebo
 find_package(gazebo REQUIRED)
 
+find_package(Eigen3 REQUIRED)
+MESSAGE( [Main] " EIGEN3_INCLUDE_DIRS = ${EIGEN3_INCLUDE_DIRS}") 
+# EIGEN3_INCLUDE_DIRS = /usr/include/eigen3
+
 ## Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
@@ -72,12 +76,15 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${GAZEBO_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/gz_ros_plugin.cpp
 # )
+
+# add_executable(main test.cpp)
 
 # For model_push_plugin plugin
 add_library(model_push_plugin src/model_push.cc)
@@ -90,6 +97,10 @@ target_link_libraries(earthquake_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 # For jetForce_plugin plugin
 add_library(jetForce_plugin src/jetForce.cc)
 target_link_libraries(jetForce_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+# For jetForce_plugin plugin
+add_library(jetForce3d_plugin src/jetForce3d.cc)
+target_link_libraries(jetForce3d_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
