@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cmath>
 #include <math.h>
 #include <thread>
 #include <functional>
@@ -108,7 +109,7 @@ namespace gazebo
     public: void OnUpdate()
     {
       double reset = 0.0;
-      double jetMag = this->x_axis_mag;
+      double jetMag = sqrt(((this->x_axis_mag)*0.5)/(0.5*8.0));
       double jetAng = deg2rad*this->x_axis_angle;
 
       MatrixXf matrixA(3,3);
@@ -140,10 +141,10 @@ namespace gazebo
         // ROS_WARN("jetforce_x >> %f", jetforce_x);
         // ROS_WARN("jetforce_z >> %f", jetforce_z);
         
-        for (int i=0; i<dur; i++)
+        for (int i=0; i<(dur*100); i++)
         {
           // Apply a small linear/angular velocity to the model.
-          this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
+          this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
           ROS_INFO("mag >> %f", this-> x_axis_mag);
             // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
         }
