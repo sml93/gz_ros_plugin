@@ -1,3 +1,4 @@
+#include <iostream>
 #include <math.h>
 #include <thread>
 #include <functional>
@@ -108,7 +109,7 @@ namespace gazebo
     {
       double reset = 0.0;
       double jetMag = this->x_axis_mag;
-      double jetAng = this->x_axis_angle;
+      double jetAng = deg2rad*this->x_axis_angle;
 
       MatrixXf matrixA(3,3);
       matrixA.setZero();
@@ -125,9 +126,10 @@ namespace gazebo
 
       MatrixXf mat(3, 1);
       mat = matrixA * matrixB;
+      // std::cout << mat << std::endl;
 
-      double jetforce_x = jetMag * sin(deg2rad*jetAng);
-      double jetforce_z = jetMag * cos(deg2rad*jetAng);
+      double jetforce_x = mat(0, 0);
+      double jetforce_z = mat(2, 0);
       int dur = this->jet_dur;
 
       // ROS_WARN("jetAng >> %f", jetAng);
