@@ -9,6 +9,7 @@
 #include "ros/console.h"
 #include "std_msgs/Int16.h"
 #include "std_msgs/Float32.h"
+#include "std_msgs/Bool.h"
 #include "ros/callback_queue.h"
 #include "ros/subscribe_options.h"
 #include "geometry_msgs/PoseStamped.h"
@@ -44,6 +45,7 @@ namespace gazebo
       std::string jetForce_mag_topicName = "/jetForce_mag";
       std::string pose_topicName = "/mavros/local_position/pose";
       std::string time_duration_topicName = "/duration";
+      std::string jetSwitch_topicname = "/jetOn";
 
       if (!ros::isInitialized())
       {
@@ -103,6 +105,18 @@ namespace gazebo
       // Spin up the queue helper thread.
       this->rosQueueThread4 = 
         std::thread(std::bind(&jetForce::QueueThread4, this));
+
+      // Jet switch
+      ros::SubscribeOptions so5 = 
+        ros::SubscribeOptions::create<std_msgs::Int16>(
+          jetSwitch_topicname, 1,
+          boost::bind(&jetForce::OnRosMsg_Switch, this, _1),
+          ros::VoidPtr(), &this->rosQueue);
+      this->rosSub5 = this->rosNode->subscribe(so5);
+
+      // Spin up the queue helper thread.
+      this->rosQueueThread5 = 
+        std::thread(std::bind(&jetForce::QueueThread5, this));
      
 
     }
@@ -132,11 +146,27 @@ namespace gazebo
       double jetforce_x = mat(0, 0);
       double jetforce_z = mat(2, 0);
       int dur = this->jet_dur;
+      int jetOn = this->jet_switch;
 
       // ROS_WARN("jetAng >> %f", jetAng);
       // ROS_WARN("jetMag >> %f", jetMag);
 
-      if (jetMag != 0)
+      // if (jetMag != 0)
+      // {
+      //   // ROS_WARN("jetforce_x >> %f", jetforce_x);
+      //   // ROS_WARN("jetforce_z >> %f", jetforce_z);
+        
+      //   for (int i=0; i<(dur*100); i++)
+      //   {
+      //     // Apply a small linear/angular velocity to the model.
+      //     this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
+      //     ROS_INFO("mag >> %f", this-> x_axis_mag);
+      //       // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
+      //   }
+      //   this->x_axis_mag = 0.0;
+      // }
+
+      if (jetOn)
       {
         // ROS_WARN("jetforce_x >> %f", jetforce_x);
         // ROS_WARN("jetforce_z >> %f", jetforce_z);
@@ -146,9 +176,10 @@ namespace gazebo
           // Apply a small linear/angular velocity to the model.
           this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
           ROS_INFO("mag >> %f", this-> x_axis_mag);
+          ROS_INFO("jet on: >> %i", (jetOn));
             // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
         }
-        this->x_axis_mag = 0.0;
+        this->jet_switch = 0;
       }
     }
 
@@ -171,7 +202,16 @@ namespace gazebo
       this->jet_dur = _dur;
     }
 
+    public: void SetSwitch(const int &_switch)
+    {
+      this->jet_switch = _switch;
+    }
+
     
+
+
+
+
     public: void OnRosMsg_Ang(const std_msgs::Int16ConstPtr &_msg)
     {
       this->SetAngle(_msg->data);
@@ -186,6 +226,11 @@ namespace gazebo
     public: void OnRosMsg_Dur(const std_msgs::Int16ConstPtr &_msg)
     {
       this->SetDuration(_msg->data);
+    }
+
+    public: void OnRosMsg_Switch(const std_msgs::Int16ConstPtr &_msg)
+    {
+      this->SetSwitch(_msg->data);
     }
 
     public: void OnRosMsg_Pose(const geometry_msgs::PoseStamped::ConstPtr &_msg)
@@ -242,6 +287,17 @@ namespace gazebo
     }
 
     
+    ///\brief ROS Helper function5 that processes messages
+    private: void QueueThread5()
+    {
+      static const double timeout = 0.01;
+      while (this->rosNode->ok())
+      {
+        this->rosQueue5.callAvailable(ros::WallDuration(timeout));
+      }
+    }
+
+    
 
     // Pointer to the model
     private: physics::ModelPtr model;
@@ -252,6 +308,7 @@ namespace gazebo
     double x_axis_angle = 0.0;
     double x_axis_mag = 0.0;
     int jet_dur = 0;
+    int jet_switch = 0;
 
     double x_current;
     double y_current;
@@ -274,6 +331,10 @@ namespace gazebo
     private: ros::Subscriber rosSub4;
     private: ros::CallbackQueue rosQueue4;
     private: std::thread rosQueueThread4;
+
+    private: ros::Subscriber rosSub5;
+    private: ros::CallbackQueue rosQueue5;
+    private: std::thread rosQueueThread5;
 
   };
 
