@@ -144,7 +144,7 @@ namespace gazebo
       // std::cout << mat << std::endl;
 
       double jetforce_x = mat(0, 0);
-      double jetforce_z = mat(2, 0);
+      double jetforce_z = mat(2, 0)/2;
       int dur = this->jet_dur;
       int jetOn = this->jet_switch;
 
@@ -171,16 +171,15 @@ namespace gazebo
         // ROS_WARN("jetforce_x >> %f", jetforce_x);
         // ROS_WARN("jetforce_z >> %f", jetforce_z);
         
-        for (int i=0; i<(dur*100); i++)
-        {
-          // Apply a small linear/angular velocity to the model.
-          this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
-          ROS_INFO("mag >> %f", this-> x_axis_mag);
-          ROS_INFO("jet on: >> %i", (jetOn));
-            // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
-        }
+        // Apply a small linear/angular velocity to the model.
+        this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
+        ROS_INFO("mag >> %f", this-> x_axis_mag);
+        ROS_INFO("jet on: >> %i", (jetOn));
+          // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
         this->jet_switch = 0;
       }
+
+      
     }
 
     
