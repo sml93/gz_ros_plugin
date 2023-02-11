@@ -98,9 +98,13 @@ target_link_libraries(earthquake_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 add_library(jetForce_plugin src/jetForce.cc)
 target_link_libraries(jetForce_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-# For jetForce_plugin plugin
-add_library(jetForce3d_plugin src/jetForce3d.cc)
-target_link_libraries(jetForce3d_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+# For Force3d_plugin plugin
+add_library(Force3d_plugin src/Force3d.cc)
+target_link_libraries(Force3d_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+# For ceiling effect plugin
+add_library(ce_plugin src/ceilingEffect.cc)
+target_link_libraries(ce_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries

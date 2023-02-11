@@ -82,7 +82,7 @@ namespace gazebo
       this->rosQueueThread2 = 
         std::thread(std::bind(&jetForce::QueueThread2, this));
 
-      // Magnitude
+      // UAV pose
       ros::SubscribeOptions so3 = 
         ros::SubscribeOptions::create<geometry_msgs::PoseStamped>(
           pose_topicName, 1,

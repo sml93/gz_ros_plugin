@@ -21,4 +21,8 @@ TODO: Check on jetForce angle rotation accuracy. Seems like negative angles push
 Date of update: 06 May 2022
 Edited: Added deg2rad conversion to correct the force applied in x-z plane. Fixed command to send linear force for a few instances then set mag to zero.  
 TODO:  
+  
 
+Date of update: 11 Feb 2023  
+Edited: Replaced Jetforce3D to Force3D. This encompasses the external forces plugin that acts on the UAV: jetForce or ceilingEffect forces.  
+TODO: Conduct experiments on the ce input velocity. The model should increase vi as it approaches the ceiling.  
