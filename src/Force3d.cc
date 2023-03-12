@@ -145,15 +145,16 @@ namespace gazebo
       double pitch = this->pitch;
       double yaw = this->yaw;
 
-      double delta = 0;
-      double gamma = 0;
-      double ce_thrust = 0;
-      double alpha0 = 0;
+      double delta = 0.0;
+      double gamma = 0.0;
+      double ce_thrust = 0.0;
+      double alpha0 = 1.6;
       double radius = 5*0.0254;
-      double alpha1 = 1.6;
+      double alpha1 = 0.0;
       double rho = 1.293;
       double area = M_PI*(pow(radius,2));
-      double inputVel = 1;
+      double inputVel = 5;
+      // double inputVel = this->ipVel;
 
       float sx, sy, sz, cx, cy, cz, phi, theta, psi;
 
@@ -191,7 +192,7 @@ namespace gazebo
         delta = radius / -2.5;
       }
       else {
-        delta = radius / -ceiling_dist;
+        delta = radius / ceiling_dist;
       }
       
 
@@ -229,15 +230,22 @@ namespace gazebo
       sz = sin(psi);
       cz = sin(psi);
 
-      matrixR(0, 0) = cy*cz;
-      matrixR(0, 1) = (sx*sy*cz)-(cx*sz);
-      matrixR(0, 2) = (cx*sy*cz)-(sx*sz);
-      matrixR(1, 0) = cx*sz;
-      matrixR(1, 1) = (sx*sy*sz) + (cx*cz);
-      matrixR(1, 2) = (cx*sy*sz) - (sx*cz);
-      matrixR(2, 0) = -sx;
-      matrixR(2, 1) = sx*cy;
-      matrixR(2, 2) = cx*cy;
+      // matrixR(0, 0) = cy*cz;
+      // matrixR(0, 1) = (sx*sy*cz)-(cx*sz);
+      // matrixR(0, 2) = (cx*sy*cz)-(sx*sz);
+      // matrixR(1, 0) = cx*sz;
+      // matrixR(1, 1) = (sx*sy*sz) + (cx*cz);
+      // matrixR(1, 2) = (cx*sy*sz) - (sx*cz);
+      // matrixR(2, 0) = -sx;
+      // matrixR(2, 1) = sx*cy;
+      // matrixR(2, 2) = cx*cy;
+
+      matrixR.setZero();
+      matrixR(0, 0) = cy;
+      matrixR(1, 0) = sy;
+      matrixR(1, 1) = 1;
+      matrixR(2, 0) = -sy;
+      matrixR(2, 2) = cy;
 
       MatrixXf matrixF(3, 1);
       matrixF.setZero();
@@ -246,16 +254,20 @@ namespace gazebo
       MatrixXf matForce(3, 1);
       matForce = matrixR * matrixF;
 
-      if ((ceiling_dist > 0) && (ceiling_dist <= 0.5))
+      if ((ceiling_dist > 0) && (ceiling_dist <= 0.2))
       {
-        inputVel = 2.0; // Do thrust stand experiments to get CE input velocitu model then replace this.
-        gamma = 0.5*(1-(alpha1*pow(delta,2))) + 0.5*(sqrt(pow(1-(alpha1*(pow(delta,2))),2)+(alpha0/8*(pow(delta,2)))));
-        ce_thrust = 2*rho*area*pow(gamma,2)*(pow(inputVel,2));
+        ROS_INFO("In this loop");
+        inputVel = 5.0; // Do thrust stand experiments to get CE input velocitu model then replace this.
+        gamma = 0.5*(1.0-(alpha1*pow(delta,2))) + 0.5*(sqrt(pow(1-(alpha1*(pow(delta,2))),2)+(alpha0/8.0*(pow(delta,2)))));
+        ce_thrust = 2.0*rho*area*pow(gamma,2)*(pow(inputVel,2));
+        ROS_INFO("ce_thrust: >> %f", ce_thrust);
+        ROS_INFO("delta: >> %f", delta);
+        ROS_INFO("gamma: >> %f", gamma);
 
         // // Apply a small linear/angular velocity to the model.
         // forceX = matForce(0,0);
         // forceY = matForce(1,0);
-        // forceZ = matForce(2,0);
+        // forceZ = matForce(2,0);  
 
         forceX = 0;
         forceY = 0;
@@ -264,8 +276,8 @@ namespace gazebo
         
         // Apply a small linear/angular velocity to the model.
         this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(forceX, forceY, forceZ));
-        ROS_INFO("ForceX: >> %f", forceX);
-        ROS_INFO("ForceY: >> %f", forceY);
+        // ROS_INFO("ForceX: >> %f", forceX);
+        // ROS_INFO("ForceY: >> %f", forceY);
         ROS_INFO("ForceZ: >> %f", forceZ);
       }
 
@@ -319,8 +331,15 @@ namespace gazebo
     public: void getCEdist(const double &_dist)
     {
       this->ce_dist = 2.5 - _dist;
+      // this->vi = CEVel(_dist)
       ROS_INFO("dist >> %f", ce_dist);
+      // ROS_INFO("inputVel >> %f", vi);
     }
+
+    // public: void CEVel(const double &_dist)
+    // {
+    //   this->ipVel = (pow(a2,2)*_dist) + a1*_dist + a0;
+    // }
 
     
 
@@ -459,6 +478,7 @@ namespace gazebo
     double rz_current;
     double w_current;
     double ce_dist;
+    double ipVel;
 
 
     private: std::unique_ptr<ros::NodeHandle> rosNode;
