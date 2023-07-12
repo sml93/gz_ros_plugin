@@ -137,8 +137,11 @@ namespace gazebo
     public: void OnUpdate()
     {
       double reset = 0.0;
-      double jetMag = sqrt(((this->x_axis_mag)*0.5)/(0.5*8.0));
-      double jetAng = deg2rad*this->x_axis_angle;
+      // double jetMag = sqrt(((this->x_axis_mag)*0.5)/(0.5*8.0));
+      double jetMag = this->x_axis_mag;
+      // double jetAng = this->x_axis_angle * deg2rad;
+      double jetAng = 60*deg2rad;
+      // double jetAng = this->jet_ang*deg2rad;
 
       double ceiling_dist = this->ce_dist;
       double roll = this->roll;
@@ -157,7 +160,6 @@ namespace gazebo
       // double inputVel = this->ipVel;
 
       float sx, sy, sz, cx, cy, cz, phi, theta, psi;
-
 
 
       MatrixXf matrixA(3,3);
@@ -181,6 +183,17 @@ namespace gazebo
       double jetforce_z = mat(2, 0);
       int dur = this->jet_dur;
       int jetOn = this->jet_switch;
+
+      jetforce_x = sin(jetAng) * jetMag;
+      jetforce_z = cos(jetAng) * jetMag;
+
+      // ROS_INFO("jetAng: >> %f", jetAng);
+      // ROS_INFO("jetforce_x: >> %f", jetforce_x);
+      // ROS_INFO("jetforce_z: >> %f", jetforce_z);
+
+
+      this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
+      // this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
 
 
       //////
@@ -254,10 +267,10 @@ namespace gazebo
       MatrixXf matForce(3, 1);
       matForce = matrixR * matrixF;
 
-      if ((ceiling_dist > 0) && (ceiling_dist <= 0.2))
+      if ((ceiling_dist > 0) && (ceiling_dist <= 0.4))
       {
         ROS_INFO("In this loop");
-        inputVel = 5.0; // Do thrust stand experiments to get CE input velocitu model then replace this.
+        inputVel = 5.0; // Do thrust stand experiments to get CE input velocity model then replace this.
         gamma = 0.5*(1.0-(alpha1*pow(delta,2))) + 0.5*(sqrt(pow(1-(alpha1*(pow(delta,2))),2)+(alpha0/8.0*(pow(delta,2)))));
         ce_thrust = 2.0*rho*area*pow(gamma,2)*(pow(inputVel,2));
         ROS_INFO("ce_thrust: >> %f", ce_thrust);
@@ -275,38 +288,42 @@ namespace gazebo
 
         
         // Apply a small linear/angular velocity to the model.
+        this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
         this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(forceX, forceY, forceZ));
+        // this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
         // ROS_INFO("ForceX: >> %f", forceX);
         // ROS_INFO("ForceY: >> %f", forceY);
         ROS_INFO("ForceZ: >> %f", forceZ);
       }
 
+
       //////
       // Jet effect model
       //////
 
-      if (jetOn)
-      {
-        // ROS_WARN("jetforce_x >> %f", jetforce_x);
-        // ROS_WARN("jetforce_z >> %f", jetforce_z);
+      // if (jetOn)
+      // {
+      //   // ROS_WARN("jetforce_x >> %f", jetforce_x);
+      //   // ROS_WARN("jetforce_z >> %f", jetforce_z);
         
-        for (int i=0; i<(dur*100); i++)
-        {
-          // Apply a small linear/angular velocity to the model.
-          // this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
-          this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
-          ROS_INFO("mag >> %f", this-> x_axis_mag);
-          ROS_INFO("jet on: >> %i", (jetOn));
-            // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
-        }
-        this->jet_switch = 0;
-      }
+      //   for (int i=0; i<(dur*100); i++)
+      //   {
+      //     // Apply a small linear/angular velocity to the model.
+      //     this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
+      //     // this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
+      //     ROS_INFO("Xmag >> %f", -jetforce_x);
+      //     ROS_INFO("Zmag >> %f", jetforce_z);
+      //     ROS_INFO("jet on: >> %i", (jetOn));
+      //     // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
+      //   }
+      //   this->jet_switch = 0;
+      // }
     }
-
     
     public: void SetAngle(const double &_angle)
     {
       this->x_axis_angle = _angle;
+      // this->jet_ang = _angle;
       ROS_INFO("x_axis_angle >> %f", this->x_axis_angle);
     }
 
@@ -325,6 +342,7 @@ namespace gazebo
     public: void SetSwitch(const int &_switch)
     {
       this->jet_switch = _switch;
+      ROS_INFO("On/Off: >> %d", this->jet_switch);
     }
 
 
@@ -341,7 +359,6 @@ namespace gazebo
     //   this->ipVel = (pow(a2,2)*_dist) + a1*_dist + a0;
     // }
 
-    
 
     public: void OnRosMsg_Ang(const std_msgs::Int16ConstPtr &_msg)
     {
@@ -459,6 +476,7 @@ namespace gazebo
     private: event::ConnectionPtr updateConnection;
 
     double x_axis_angle = 0.0;
+    double jet_ang = 0.0;
     double x_axis_mag = 0.0;
     int jet_dur = 0;
     int jet_switch = 0;
@@ -469,6 +487,8 @@ namespace gazebo
     double forceX;
     double forceY;
     double forceZ;
+    double jetforce_x;
+    double jetforce_z;
 
     double x_current;
     double y_current;
