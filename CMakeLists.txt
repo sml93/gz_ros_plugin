@@ -106,6 +106,10 @@ target_link_libraries(Force3d_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 add_library(ce_plugin src/ceilingEffect.cc)
 target_link_libraries(ce_plugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
+# For ATU Wrench Plugin
+add_library(ATUWrenchPlugin src/ATUWrenchPlugin.cc) 
+target_link_libraries(ATUWrenchPlugin ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
