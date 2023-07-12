@@ -123,7 +123,8 @@ namespace gazebo
     public: void OnUpdate()
     {
       double reset = 0.0;
-      double jetMag = sqrt(((this->x_axis_mag)*0.5)/(0.5*8.0));
+      // double jetMag = sqrt(((this->x_axis_mag)*0.5)/(0.5*8.0));
+      double jetMag = this->x_axis_mag;
       double jetAng = deg2rad*this->x_axis_angle;
 
       MatrixXf matrixA(3,3);
@@ -144,9 +145,11 @@ namespace gazebo
       // std::cout << mat << std::endl;
 
       double jetforce_x = mat(0, 0);
-      double jetforce_z = mat(2, 0)/2;
+      double jetforce_z = mat(2, 0);
       int dur = this->jet_dur;
       int jetOn = this->jet_switch;
+      jetforce_x = sin(jetAng) * jetMag;
+      jetforce_z = cos(jetAng) * jetMag;
 
       // ROS_WARN("jetAng >> %f", jetAng);
       // ROS_WARN("jetMag >> %f", jetMag);
@@ -166,18 +169,22 @@ namespace gazebo
       //   this->x_axis_mag = 0.0;
       // }
 
-      if (jetOn)
+      if (jetOn == 1)
       {
         // ROS_WARN("jetforce_x >> %f", jetforce_x);
         // ROS_WARN("jetforce_z >> %f", jetforce_z);
         
         // Apply a small linear/angular velocity to the model.
-        this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
+        // this->model->SetLinearVel(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));    // convert Force to velocity by using W = Fd = 0.5mv**2 where d for alp=0 is 0.9
+        this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(-jetforce_x, 0, jetforce_z));
         ROS_INFO("mag >> %f", this-> x_axis_mag);
-        ROS_INFO("jet on: >> %i", (jetOn));
-          // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
-        this->jet_switch = 0;
+        ROS_INFO("jet on >> %i", (jetOn));
+        // this->model->SetAngularVel(ignition::math::Vector3d(jetforce_x, 0, 0));
+        // this->jet_switch = 0;
       }
+      else
+        this->jet_switch = 0;
+        jetOn = this->jet_switch;
 
       
     }
