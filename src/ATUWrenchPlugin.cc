@@ -55,6 +55,9 @@ namespace gazebo
       wrench.resize(6);
       wrench.setZero();
 
+      force_msg.Set(0.0, 0.0, 0.0);
+      torque_msg.Set(0.0, 0.0, 0.0);
+
       // Angle
       ros::SubscribeOptions so = 
         ros::SubscribeOptions::create<geometry_msgs::Wrench>(
@@ -62,6 +65,10 @@ namespace gazebo
           boost::bind(&ATUWrenchPlugin::onWrenchMsg, this, _1),
           ros::VoidPtr(), &this->rosQueue);
       this->rosSub = this->rosNode->subscribe(so);
+
+      // Spin up the queue helper thread.
+      this->rosQueueThread = 
+        std::thread(std::bind(&ATUWrenchPlugin::QueueThread, this));
 
     }
 
@@ -83,8 +90,16 @@ namespace gazebo
     
     {
 
-        this->model->GetLink("base_link")->SetForce(ignition::math::Vector3d(wrench(0), wrench(1), wrench(2)));
-        this->model->GetLink("base_link")->SetTorque(ignition::math::Vector3d(wrench(3), wrench(4), wrench(5)));
+        force_msg.Set(wrench(0), wrench(1), wrench(2));
+        torque_msg.Set(wrench(3), wrench(4), wrench(5));
+        this->model->GetLink("base_link")->SetForce(force_msg);
+        this->model->GetLink("base_link")->AddTorque(torque_msg);
+        ROS_INFO("wrench_Fx = %f", force_msg.X());
+        ROS_INFO("wrench_Fy = %f", force_msg.Y());
+        ROS_INFO("wrench_Fz = %f", force_msg.Z());
+        ROS_INFO("wrench_Mx = %f", torque_msg.X());
+        ROS_INFO("wrench_My = %f", torque_msg.Y());
+        ROS_INFO("wrench_Mz = %f", torque_msg.Z());
 
     }
 
@@ -98,9 +113,22 @@ namespace gazebo
         ros::CallbackQueue rosQueue;
         std::thread rosQueueThread;
         Eigen::VectorXd wrench;
+        ignition::math::Vector3d force_msg; 
+        ignition::math::Vector3d torque_msg; 
+
+    private: void QueueThread()
+    {
+      static const double timeout = 0.01;
+      while(this->rosNode->ok())
+      {
+        this->rosQueue.callAvailable(ros::WallDuration(timeout));
+      }
+    }
 
 
   };
+
+  
 
     GZ_REGISTER_MODEL_PLUGIN(ATUWrenchPlugin)
 
